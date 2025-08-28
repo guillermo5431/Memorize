@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  EmojiMemoryGameView.swift
 //  Memorize
 //
 //  Created by Guillermo Reyes on 8/3/25.
@@ -10,11 +10,14 @@ import SwiftUI
 struct EmojiMemoryGameView: View {
     @ObservedObject var viewModel: EmojiMemoryGame
     
+    private let aspectRatio: CGFloat = 2/3
+    
     var body: some View {
         VStack {
-            ScrollView {
-                cards
-            }
+            // The card grid fills as much vertical space as possible
+            cards
+                .animation(.default, value: viewModel.cards)
+            // Shuffle button pinned under the grid
             Button("Shuffle") {
                 viewModel.shuffle()
             }
@@ -22,18 +25,19 @@ struct EmojiMemoryGameView: View {
         .padding()
     }
     
-    var cards: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 85), spacing: 0)], spacing: 0) {
-            ForEach(viewModel.cards.indices, id: \.self){ index in
-                CardView(viewModel.cards[index])
-                    .aspectRatio(2/3, contentMode: .fit)
-                    .padding(4)
+    private var cards: some View {
+        AspectVGrid(viewModel.cards, aspectRatio: aspectRatio) { card in
+                    CardView(card)
+                        .aspectRatio(aspectRatio, contentMode: .fit)
+                        .padding(4)
+                        .onTapGesture {
+                            viewModel.choose(card)
+                        }
+                }
+        .foregroundStyle(Color.orange)
             }
         }
-        .foregroundColor(.orange)
-    }
-    
-}
+
 
 struct CardView: View {
     let card: MemoryGame<String>.Card
@@ -51,11 +55,12 @@ struct CardView: View {
                 Text(card.content)
                     .font(.system(size: 200))
                     .minimumScaleFactor(0.01)
-                    .aspectRatio(1, contentMode: .fit)
+                    .aspectRatio(contentMode: .fit)
             }
             .opacity(card.isFaceUp ? 1 : 0)
             base.fill().opacity(card.isFaceUp ? 0 : 1)
         }
+        .opacity(card.isFaceUp || !card.isMatched ? 1 : 0)
     }
 }
 
